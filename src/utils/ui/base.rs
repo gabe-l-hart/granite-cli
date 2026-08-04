@@ -5,6 +5,15 @@ use crate::registry::ConfigConstructable;
 
 /*-- public --*/
 
+/// A single row of string cells in a table.
+pub type TableRow = Vec<String>;
+/// A captured table: `(title, headers, rows)`.
+pub type TableEntry = (String, Vec<String>, Vec<TableRow>);
+/// A single key-value field in a detail view.
+pub type DetailField = (String, String);
+/// A captured detail view: `(title, fields)`.
+pub type DetailEntry = (String, Vec<DetailField>);
+
 /// Metadata describing a registered UI backend.
 #[derive(Debug, Clone)]
 pub struct UiMetadata {
@@ -228,9 +237,9 @@ pub(crate) mod tests {
     #[derive(Default)]
     pub struct CaptureUi {
         /// (title, headers, rows) for each table() call
-        pub tables: RefCell<Vec<(String, Vec<String>, Vec<Vec<String>>)>>,
+        pub tables: RefCell<Vec<TableEntry>>,
         /// (title, fields) for each detail() call
-        pub details: RefCell<Vec<(String, Vec<(String, String)>)>>,
+        pub details: RefCell<Vec<DetailEntry>>,
         /// (label, ok, detail) for each status() call
         pub statuses: RefCell<Vec<(String, bool, String)>>,
         pub infos: RefCell<Vec<String>>,
