@@ -151,12 +151,11 @@ pub(crate) async fn run_command(
     // in WSL) fail with os error 193 ("%1 is not a valid Win32 application")
     // when spawned directly. In those cases, fall back to invoking through
     // `cmd.exe /C`, which handles PE format compatibility correctly.
-    let (binary_fallback, args_fallback, overlay_fallback) = (
-        binary.clone(),
-        args.to_vec(),
-        overlay.to_vec(),
-    );
-    let status = tokio::task::spawn_blocking(move || -> anyhow::Result<std::process::ExitStatus> {
+    #[cfg(windows)]
+    let (binary_fallback, args_fallback, overlay_fallback) =
+        (binary.clone(), args.to_vec(), overlay.to_vec());
+
+    tokio::task::spawn_blocking(move || -> anyhow::Result<std::process::ExitStatus> {
         let mut spawn_cmd = cmd;
 
         // In WSL, the parent's CWD may be a WSL path that gets translated to
@@ -203,8 +202,7 @@ pub(crate) async fn run_command(
 
         Ok(child.wait()?)
     })
-    .await?;
-    status
+    .await?
 }
 
 /// Metadata describing a launcher implementation (type-level, catalog entry).

@@ -102,6 +102,17 @@ pub struct LauncherConfig {
 }
 
 impl Config {
+    /// Detect if running under Windows Subsystem for Linux by checking
+    /// `/proc/version` for WSL markers.
+    fn is_wsl() -> bool {
+        std::fs::read_to_string("/proc/version")
+            .map(|s| {
+                let lower = s.to_lowercase();
+                lower.contains("microsoft") || lower.contains("wsl")
+            })
+            .unwrap_or(false)
+    }
+
     fn config_dir() -> Result<PathBuf> {
         let val_res = std::env::var("GRANITE_CLI_HOME");
 
@@ -122,6 +133,39 @@ impl Config {
             }
 
             return Ok(path);
+        }
+
+        // When running under WSL, always use the Windows AppData path so
+        // config is shared between WSL and native Windows invocations,
+        // regardless of how the binary was compiled. Under WSL the C: drive
+        // is mounted at /mnt/c, so C:\Users\<user>\AppData\Roaming maps to
+        // /mnt/c/Users/<user>/AppData/Roaming. We query the Windows username
+        // via cmd.exe because it may differ from the WSL login name.
+        if Self::is_wsl() {
+            let windows_username = std::process::Command::new("cmd.exe")
+                .arg("/C")
+                .arg("echo")
+                .arg("%USERNAME%")
+                .output()
+                .ok()
+                .and_then(|out| {
+                    String::from_utf8(out.stdout)
+                        .ok()
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                });
+
+            if let Some(username) = windows_username {
+                let path = PathBuf::from("/mnt/c")
+                    .join("Users")
+                    .join(username)
+                    .join("AppData")
+                    .join("Roaming")
+                    .join("granite-cli");
+                return Ok(path);
+            }
+
+            anyhow::bail!("Running under WSL but could not determine Windows username via cmd.exe");
         }
 
         let default_dir = dirs::config_dir().ok_or_else(|| {
