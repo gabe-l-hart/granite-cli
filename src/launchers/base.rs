@@ -90,6 +90,43 @@ pub trait Launcher: crate::registry::Named + Send + Sync {
     }
 }
 
+/// Translate WSL paths to Windows paths in env var values.
+///
+/// When running a native Windows binary from WSL (e.g., `opencode.exe`),
+/// env vars like `OPENCODE_CONFIG` may contain WSL paths (`/mnt/c/Users/...`)
+/// that the PE binary cannot understand. Convert them to Windows format.
+fn translate_env_for_windows(binary: &PathBuf, env: &[EnvBinding]) -> Vec<EnvBinding> {
+    // Only translate when the target is a Windows PE binary (ends in .exe)
+    alog_channel!(MessageLevel::Debug2, "Translating for binary {:#?}", binary);
+    if !binary.to_string_lossy().to_lowercase().ends_with(".exe") {
+        return env.to_vec();
+    }
+    let mut out: Vec<_> = env
+        .iter()
+        .map(|b| {
+            let value = crate::config::translate_wsl_to_windows(&b.value)
+                .unwrap_or_else(|| b.value.clone());
+            EnvBinding {
+                key: b.key.clone(),
+                value,
+            }
+        })
+        .collect();
+    // In order for WSL env vars to be seen by Windows, they need to be added
+    // to the special WSLENV variable
+    let wslenv = out
+        .iter()
+        .map(|b| b.key.clone())
+        .collect::<Vec<_>>()
+        .join(":");
+    out.push(EnvBinding {
+        key: "WSLENV".to_string(),
+        value: wslenv,
+    });
+    alog_channel!(MessageLevel::Debug3, "Translated env vars: {:#?}", out);
+    out
+}
+
 /// Resolve a command and run it, handling dry_run and exit status.
 ///
 /// This is the shared utility that both the default `Launcher::launch` and
@@ -136,9 +173,12 @@ pub(crate) async fn run_command(
         }
     }
 
+    // Translate WSL paths in env vars when spawning a native Windows binary.
+    let translated_overlay = translate_env_for_windows(&binary, overlay);
+
     let mut cmd = std::process::Command::new(&binary);
     cmd.args(args);
-    for binding in overlay {
+    for binding in &translated_overlay {
         cmd.env(&binding.key, &binding.value);
     }
 
@@ -153,7 +193,7 @@ pub(crate) async fn run_command(
     // `cmd.exe /C`, which handles PE format compatibility correctly.
     #[cfg(windows)]
     let (binary_fallback, args_fallback, overlay_fallback) =
-        (binary.clone(), args.to_vec(), overlay.to_vec());
+        (binary.clone(), args.to_vec(), translated_overlay);
 
     tokio::task::spawn_blocking(move || -> anyhow::Result<std::process::ExitStatus> {
         let mut spawn_cmd = cmd;

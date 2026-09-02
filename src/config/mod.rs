@@ -101,10 +101,13 @@ pub struct LauncherConfig {
     pub config: serde_json::Value,
 }
 
+/*-- Windows / WSL ----------------------------------------------------------*/
+
 /// Convert a Windows path string to a WSL path.
 ///
 /// `C:\Users\gabel\AppData\Roaming\granite-cli\launchers` →
 /// `/mnt/c/Users/gabel/AppData/Roaming/granite-cli/launchers`
+#[allow(dead_code)]
 fn windows_to_wsl(path: &str) -> Option<String> {
     let path = path.trim();
     // Match Windows drive letters: X:\... or X:/...
@@ -115,14 +118,14 @@ fn windows_to_wsl(path: &str) -> Option<String> {
     let drive = &path[..1].to_lowercase();
     let rest = &path[2..];
     let normalized = rest.replace('\\', "/");
-    Some(format!("/mnt/{}/{}", drive, normalized))
+    Some(format!("/mnt/{drive}/{normalized}"))
 }
 
 /// Convert a WSL path to a Windows path.
 ///
 /// `/mnt/c/Users/gabel/AppData/Roaming/granite-cli\launchers` →
 /// `C:\Users\gabel\AppData\Roaming\granite-cli\launchers`
-fn wsl_to_windows(path: &str) -> Option<String> {
+pub fn translate_wsl_to_windows(path: &str) -> Option<String> {
     let path = path.trim();
     if !path.starts_with("/mnt/") {
         return None;
@@ -132,29 +135,32 @@ fn wsl_to_windows(path: &str) -> Option<String> {
     let drive = parts.next()?.to_uppercase();
     let rest = parts.next()?;
     let normalized = rest.replace('/', "\\");
-    Some(format!("{}:\\{}", drive, normalized))
+    Some(format!("{drive}:\\{normalized}"))
 }
 
 /// Recursively walk a serde_json::Value and translate path strings.
 ///
 /// When `to_wsl` is true, converts Windows paths → WSL paths.
 /// When `to_wsl` is false, converts WSL paths → Windows paths.
+#[allow(dead_code)]
 fn translate_paths_in_value(value: &serde_json::Value, to_wsl: bool) -> serde_json::Value {
     match value {
         serde_json::Value::String(s) => {
             let translated = if to_wsl {
                 windows_to_wsl(s)
             } else {
-                wsl_to_windows(s)
+                translate_wsl_to_windows(s)
             };
             match translated {
                 Some(t) => serde_json::Value::String(t),
                 None => value.clone(),
             }
         }
-        serde_json::Value::Array(arr) => {
-            serde_json::Value::Array(arr.iter().map(|v| translate_paths_in_value(v, to_wsl)).collect())
-        }
+        serde_json::Value::Array(arr) => serde_json::Value::Array(
+            arr.iter()
+                .map(|v| translate_paths_in_value(v, to_wsl))
+                .collect(),
+        ),
         serde_json::Value::Object(map) => {
             let new_map: serde_json::Map<String, serde_json::Value> = map
                 .iter()
@@ -171,6 +177,7 @@ fn translate_paths_in_value(value: &serde_json::Value, to_wsl: bool) -> serde_js
 /// When running under WSL, Windows paths stored in config files are
 /// converted to WSL paths so they work at runtime. On save, the reverse
 /// conversion restores Windows-native paths for disk persistence.
+#[cfg(not(windows))]
 fn translate_paths_in_config(config: &mut serde_json::Value, to_wsl: bool) {
     config["command_path"] = translate_paths_in_value(&config["command_path"], to_wsl);
     if let Some(overrides) = config.get_mut("provider_overrides") {
@@ -183,6 +190,10 @@ fn translate_paths_in_config(config: &mut serde_json::Value, to_wsl: bool) {
         *overrides = translate_paths_in_value(overrides, to_wsl);
     }
 }
+
+/// No-op stub for native Windows builds where paths never need translation.
+#[cfg(windows)]
+fn translate_paths_in_config(_config: &mut serde_json::Value, _to_wsl: bool) {}
 
 /// Trait for config types that carry a serde_json::Value config field.
 /// Used to apply path translation generically across all config types.
@@ -214,16 +225,33 @@ impl ConfigPathTranslator for LauncherConfig {
     }
 }
 
+/*-- Core Config ------------------------------------------------------------*/
+
 impl Config {
-    /// Detect if running under Windows Subsystem for Linux by checking
-    /// `/proc/version` for WSL markers.
+    /// Detect if running under Windows Subsystem for Linux.
+    ///
+    /// We check multiple indicators because PE binaries running under WSL
+    /// may not have reliable access to `/proc/version` (the Windows libc
+    /// runtime used by PE binaries doesn't translate `/proc` the same way
+    /// Linux processes do). We prefer the `/proc/sys/kernel/osrelease` file
+    /// which WSL consistently exposes, then fall back to `/proc/version`.
     fn is_wsl() -> bool {
-        std::fs::read_to_string("/proc/version")
-            .map(|s| {
-                let lower = s.to_lowercase();
-                lower.contains("microsoft") || lower.contains("wsl")
-            })
-            .unwrap_or(false)
+        // Method 1: Check /proc/sys/kernel/osrelease (works for PE binaries under WSL)
+        if let Ok(s) = std::fs::read_to_string("/proc/sys/kernel/osrelease") {
+            let lower = s.to_lowercase();
+            if lower.contains("microsoft") || lower.contains("wsl") {
+                return true;
+            }
+        }
+        // Method 2: Check /proc/version (works for native Linux binaries)
+        if let Ok(s) = std::fs::read_to_string("/proc/version") {
+            let lower = s.to_lowercase();
+            if lower.contains("microsoft") || lower.contains("wsl") {
+                return true;
+            }
+        }
+        // Method 3: Check for WSL_DISTRO_NAME environment variable
+        std::env::var("WSL_DISTRO_NAME").is_ok()
     }
 
     fn config_dir() -> Result<PathBuf> {
@@ -254,6 +282,10 @@ impl Config {
         // is mounted at /mnt/c, so C:\Users\<user>\AppData\Roaming maps to
         // /mnt/c/Users/<user>/AppData/Roaming. We query the Windows username
         // via cmd.exe because it may differ from the WSL login name.
+        //
+        // The path format depends on the compile target: ELF binaries (Linux
+        // builds) see WSL paths like `/mnt/c/...`, while PE binaries (Windows
+        // builds) see native Windows paths like `C:\Users\...`.
         if Self::is_wsl() {
             let windows_username = std::process::Command::new("cmd.exe")
                 .arg("/C")
@@ -269,13 +301,27 @@ impl Config {
                 });
 
             if let Some(username) = windows_username {
-                let path = PathBuf::from("/mnt/c")
-                    .join("Users")
-                    .join(username)
-                    .join("AppData")
-                    .join("Roaming")
-                    .join("granite-cli");
-                return Ok(path);
+                #[cfg(windows)]
+                {
+                    // PE binary: use native Windows path
+                    let path = PathBuf::from("C:\\Users")
+                        .join(&username)
+                        .join("AppData")
+                        .join("Roaming")
+                        .join("granite-cli");
+                    return Ok(path);
+                }
+                #[cfg(not(windows))]
+                {
+                    // ELF binary: use WSL mount path
+                    let path = PathBuf::from("/mnt/c")
+                        .join("Users")
+                        .join(&username)
+                        .join("AppData")
+                        .join("Roaming")
+                        .join("granite-cli");
+                    return Ok(path);
+                }
             }
 
             anyhow::bail!("Running under WSL but could not determine Windows username via cmd.exe");
@@ -359,7 +405,10 @@ impl Config {
         Ok(())
     }
 
-    fn load_dir<K: std::hash::Hash + Eq + ToString, V: serde::de::DeserializeOwned + ConfigId + ConfigPathTranslator>(
+    fn load_dir<
+        K: std::hash::Hash + Eq + ToString,
+        V: serde::de::DeserializeOwned + ConfigId + ConfigPathTranslator,
+    >(
         dir: &Path,
         into_key: impl Fn(&str) -> K + Copy,
     ) -> Result<HashMap<K, V>> {
