@@ -333,7 +333,11 @@ impl CapabilityCommands {
 
         ModelCommands::setup(ctx, model_type, None).await?;
 
-        alog_channel!(MessageLevel::Debug3, "Getting model candidates for requirements: {:#?}", requirement);
+        alog_channel!(
+            MessageLevel::Debug3,
+            "Getting model candidates for requirements: {:#?}",
+            requirement
+        );
         let (usable_after, _) = Self::model_candidates(ctx, requirement);
         let new_usable: Vec<_> = usable_after
             .iter()
@@ -373,7 +377,12 @@ impl CapabilityCommands {
                     .find(|(i, _)| i == id)
                     .is_some_and(|(_, model)| {
                         let model_functions = model.supported_functions();
-                        alog_channel!(MessageLevel::Debug4, "Checking model candidate {:#?} with supported functions {:#?}", model.instance_id(), model_functions);
+                        alog_channel!(
+                            MessageLevel::Debug4,
+                            "Checking model candidate {:#?} with supported functions {:#?}",
+                            model.instance_id(),
+                            model_functions
+                        );
                         let model_ok = requirement
                             .supported_functions
                             .iter()
