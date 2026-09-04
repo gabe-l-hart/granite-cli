@@ -34,6 +34,10 @@ pub struct OpenAIProviderConfig {
     /// Specific function-to-endpoint mappings this instance supports.
     /// If None, will use default OpenAI mappings.
     pub function_endpoints: Option<HashMap<ModelFunction, Vec<ApiEndpoint>>>,
+
+    /// Custom HTTP headers to be sent with each API request.
+    /// Keys are header names (strings) and values are secret tokens.
+    pub custom_headers: Option<HashMap<String, Secret>>,
 }
 
 fn default_timeout() -> u64 {
@@ -57,6 +61,7 @@ impl Default for OpenAIProviderConfig {
             verify_ssl: true,
             health_check_endpoint: "/v1/models".to_string(),
             function_endpoints: None,
+            custom_headers: None,
         }
     }
 }
@@ -68,6 +73,7 @@ pub struct OpenAIProvider {
     config: OpenAIProviderConfig,
     client: reqwest::Client,
     function_endpoints: HashMap<ModelFunction, Vec<ApiEndpoint>>,
+    custom_headers: HashMap<String, Secret>,
 }
 
 impl OpenAIProvider {
@@ -114,11 +120,17 @@ impl ConfigConstructable for OpenAIProvider {
             .clone()
             .unwrap_or_else(Self::default_function_endpoints);
 
+        let custom_headers = config
+            .custom_headers
+            .clone()
+            .unwrap_or_else(HashMap::new);
+
         Self {
             instance_id: instance_id.to_string(),
             config,
             client,
             function_endpoints,
+            custom_headers,
         }
     }
 }
@@ -175,6 +187,12 @@ impl Provider for OpenAIProvider {
 
         if let Some(ref api_key) = self.config.api_key {
             request = request.bearer_auth(&api_key.0);
+        }
+
+        if let Some(custom_headers) = &self.config.custom_headers {
+            for (key, value) in custom_headers {
+                request = request.header(key.clone(), &value.0);
+            }
         }
 
         match request.send().await {
@@ -355,6 +373,40 @@ mod tests {
             Some(Secret("test-key".to_string()))
         );
         assert_eq!(provider.config.timeout_secs, 30);
+    }
+
+    #[test]
+    fn test_custom_headers_are_applied_to_requests() {
+        let mut custom_headers = HashMap::new();
+        custom_headers.insert(
+            "X-Custom-Header".to_string(),
+            Secret("custom-value".to_string()),
+        );
+        custom_headers.insert(
+            "X-Another-Header".to_string(),
+            Secret("another-value".to_string()),
+        );
+
+        let cfg = serde_json::json!({
+            "base_url": "http://example.com:8080",
+            "custom_headers": {
+                "X-Custom-Header": "custom-value",
+                "X-Another-Header": "another-value"
+            }
+        });
+
+        let provider = OpenAIProvider::new("my-openai", &cfg, &crate::config::Config::default());
+        assert!(provider.config.custom_headers.is_some());
+        let headers = provider.config.custom_headers.as_ref().unwrap();
+        assert_eq!(headers.len(), 2);
+        assert_eq!(
+            headers.get("X-Custom-Header").map(|s| s.0.as_str()),
+            Some("custom-value")
+        );
+        assert_eq!(
+            headers.get("X-Another-Header").map(|s| s.0.as_str()),
+            Some("another-value")
+        );
     }
 
     #[test]
