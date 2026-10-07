@@ -16,8 +16,8 @@ use std::collections::HashSet;
 
 /*-- AgentModelCapabilityConfig ---------------------------------------------------*/
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, schemars::JsonSchema, Validate)]
-pub(crate) struct AgentModelCapabilityConfig {
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema, Validate)]
+pub struct AgentModelCapabilityConfig {
     /// Key into the configured models map (the user-chosen instance ID).
     #[validate(min_length = 1, message = "no model is selected")]
     pub(crate) model_id: String,

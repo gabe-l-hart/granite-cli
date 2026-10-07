@@ -55,17 +55,17 @@ impl ConfigPathTranslator for recommended_config::RecommendedConfiguration {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub(crate) struct Config {
-    pub(crate) models: HashMap<String, ModelConfig>,
-    pub(crate) providers: HashMap<String, ProviderConfig>,
-    pub(crate) capabilities: HashMap<String, CapabilityConfig>,
-    pub(crate) launchers: HashMap<String, LauncherConfig>,
-    pub(crate) recommended_configs: HashMap<String, recommended_config::RecommendedConfiguration>,
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Config {
+    pub models: HashMap<String, ModelConfig>,
+    pub providers: HashMap<String, ProviderConfig>,
+    pub capabilities: HashMap<String, CapabilityConfig>,
+    pub launchers: HashMap<String, LauncherConfig>,
+    pub recommended_configs: HashMap<String, recommended_config::RecommendedConfiguration>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub(crate) struct ModelConfig {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelConfig {
     /// Instance id -- the config/file key this model is stored under.
     /// Defaults to `model_type` (see `commands::ModelCommands::setup`), but
     /// may differ to let the same catalog type be configured more than once
@@ -80,6 +80,19 @@ pub(crate) struct ModelConfig {
     /// `"custom"` instance). `{}` for catalog models, which take no config
     /// beyond `provider_config`.
     pub(crate) config: serde_json::Value,
+}
+
+#[cfg(test)]
+impl Default for ModelConfig {
+    fn default() -> Self {
+        Self {
+            model_id: String::new(),
+            model_type: String::new(),
+            provider_id: String::new(),
+            variant: None,
+            config: serde_json::Value::Object(serde_json::Map::new()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

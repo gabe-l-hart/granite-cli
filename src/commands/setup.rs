@@ -125,24 +125,8 @@ impl Discover {
 
             let default_config = PROVIDER_REGISTRY
                 .default_config(provider_type)
-                .unwrap_or_default();
-            let (discovered_base_url, health_error) =
-                first_healthy_base_url(&metadata.default_base_urls, |base_url| {
-                    let mut config = default_config.clone();
-                    async move {
-                        if !config.is_object() {
-                            return Err("Default provider config is not an object".to_string());
-                        }
-                        config["base_url"] = serde_json::Value::String(base_url);
-                        let provider = PROVIDER_REGISTRY
-                            .construct(provider_type, provider_type, &config)
-                            .map_err(|e| format!("Could not construct provider: {e}"))?;
-                        Self::run_health_check(&*provider)
-                            .await
-                            .map_err(|e| format!("Health check failed: {e}"))
-                    }
-                })
-                .await;
+                .unwrap_or_else(|| serde_json::json!({}));
+            let result = PROVIDER_REGISTRY.construct(provider_type, provider_type, &default_config);
 
             recommendations.push(Recommendation::Provider {
                 provider_type,
@@ -326,7 +310,7 @@ impl Discover {
             // Construct a transient instance with default config
             let default_config = LAUNCHER_REGISTRY
                 .default_config(launcher_type)
-                .unwrap_or_default();
+                .unwrap_or_else(|| serde_json::json!({}));
             match LAUNCHER_REGISTRY.construct(launcher_type, launcher_type, &default_config) {
                 Ok(launcher) => match launcher.validate_command() {
                     Ok(path) => recommendations.push(Recommendation::Launcher {
@@ -832,7 +816,7 @@ fn provider_can_run(provider_id: &str, variant: &ModelVariant, ctx: &crate::AppC
         None => {
             let default_config = PROVIDER_REGISTRY
                 .default_config(provider_id)
-                .unwrap_or_default();
+                .unwrap_or_else(|| serde_json::json!({}));
             PROVIDER_REGISTRY.construct(provider_id, provider_id, &default_config)
         }
     };
@@ -2015,7 +1999,9 @@ impl SetupCommands {
                         .construct(&pc.provider_type, &pc.provider_id, &pc.config)
                         .ok()
                 } else {
-                    let default_config = PROVIDER_REGISTRY.default_config(pid).unwrap_or_default();
+                    let default_config = PROVIDER_REGISTRY
+                        .default_config(pid)
+                        .unwrap_or_else(|| serde_json::json!({}));
                     PROVIDER_REGISTRY.construct(pid, pid, &default_config).ok()
                 }
             })
@@ -2267,17 +2253,7 @@ impl SetupCommands {
             ui.info(&format!("\nConfiguring provider: {provider_id}..."));
             let mut default_config = PROVIDER_REGISTRY
                 .default_config(provider_id)
-                .unwrap_or_default();
-            if let Some(base_url) = discovery.recommendations.iter().find_map(|rec| match rec {
-                Recommendation::Provider {
-                    provider_type,
-                    discovered_base_url: Some(base_url),
-                    ..
-                } if *provider_type == provider_id => Some(base_url),
-                _ => None,
-            }) {
-                default_config["base_url"] = base_url.clone().into();
-            }
+                .unwrap_or_else(|| serde_json::json!({}));
 
             let provider_config = crate::config::ProviderConfig {
                 provider_id: provider_id.clone(),
@@ -2307,7 +2283,7 @@ impl SetupCommands {
             ui.info(&format!("\nConfiguring launcher: {launcher_id}..."));
             let default_config = LAUNCHER_REGISTRY
                 .default_config(launcher_id)
-                .unwrap_or_default();
+                .unwrap_or_else(|| serde_json::json!({}));
 
             let launcher_config = crate::config::LauncherConfig {
                 launcher_id: launcher_id.to_string(),
@@ -2407,7 +2383,7 @@ impl SetupCommands {
                 capability_type: cap_type.to_string(),
                 config: CAPABILITY_REGISTRY
                     .default_config(cap_type)
-                    .unwrap_or_default(),
+                    .unwrap_or_else(|| serde_json::json!({})),
             };
             let Some(cap_model_ids) = Self::capability_model_ids(
                 cap_type,
@@ -2432,7 +2408,7 @@ impl SetupCommands {
 
             let mut config = CAPABILITY_REGISTRY
                 .default_config(cap_type)
-                .unwrap_or_default();
+                .unwrap_or_else(|| serde_json::json!({}));
 
             // Set each resolved model dependency slot
             for (config_key, model_id) in &cap_model_ids {
@@ -3894,7 +3870,7 @@ mod tests {
                 provider_type: "lm-studio".to_string(),
                 config: PROVIDER_REGISTRY
                     .default_config("lm-studio")
-                    .unwrap_or_default(),
+                    .unwrap_or_else(|| serde_json::json!({})),
             },
         );
         let selected: HashSet<String> = ["lm-studio".to_string()].into_iter().collect();
