@@ -51,8 +51,8 @@ fn find_double_newline(buf: &[u8]) -> Option<usize> {
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub(crate) struct LlamaCppProviderConfig {
     /// Base URL for the llama.cpp server
-    #[serde(default = "default_llamacpp_url")]
-    pub(crate) base_url: String,
+    #[serde(default = "default_base_url")]
+    pub base_url: String,
 
     /// API key for authentication (optional)
     pub(crate) api_key: Option<Secret>,
@@ -70,8 +70,8 @@ pub(crate) struct LlamaCppProviderConfig {
     pub(crate) health_check_endpoint: String,
 }
 
-fn default_llamacpp_url() -> String {
-    LlamaCppProvider::metadata().default_base_urls[0].clone()
+fn default_base_url() -> String {
+    "http://localhost:8080".to_string()
 }
 
 fn default_timeout() -> u64 {
@@ -89,7 +89,7 @@ fn default_llamacpp_health_endpoint() -> String {
 impl Default for LlamaCppProviderConfig {
     fn default() -> Self {
         Self {
-            base_url: default_llamacpp_url(),
+            base_url: default_base_url(),
             api_key: None,
             timeout_secs: default_timeout(),
             verify_ssl: default_verify_ssl(),
@@ -288,10 +288,6 @@ impl LlamaCppProvider {
 
 impl ConfigConstructable for LlamaCppProvider {
     type Config = LlamaCppProviderConfig;
-
-    fn default_config() -> Option<serde_json::Value> {
-        serde_json::to_value(Self::Config::default()).ok()
-    }
 
     fn new(instance_id: &str, cfg: &serde_json::Value) -> Result<Self, ConstructError> {
         let config: LlamaCppProviderConfig =
