@@ -37,8 +37,8 @@ use tokio::sync::Mutex;
 
 /*-- VisionMCPCapabilityConfig ----------------------------------------------------*/
 
-#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema, Validate)]
-pub(crate) struct VisionMCPCapabilityConfig {
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema, Validate, Default)]
+pub struct VisionMCPCapabilityConfig {
     /// Key into the configured models map (the user-chosen instance ID) for
     /// the vision-language model this capability serves.
     #[validate(min_length = 1, message = "no model is selected")]

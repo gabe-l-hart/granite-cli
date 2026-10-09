@@ -420,12 +420,12 @@ impl std::fmt::Display for ModelType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
-pub(crate) struct ModelVariant {
-    pub(crate) format: String,
-    pub(crate) precision: String,
-    pub(crate) size_gb: Option<f64>,
-    pub(crate) url: String,
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema, Default)]
+pub struct ModelVariant {
+    pub format: String,
+    pub precision: String,
+    pub size_gb: Option<f64>,
+    pub url: String,
 }
 
 /*-- Factory Definition ------------------------------------------------------*/
