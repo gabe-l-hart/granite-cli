@@ -22,7 +22,6 @@ tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 reqwest = { version = "0.12", features = ["json", "stream"] }
 num_cpus = "1"
-sys-info = "0.9"
 thiserror = "2"
 which = "7"
 schemars = "1.2.1"

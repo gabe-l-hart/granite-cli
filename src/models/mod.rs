@@ -16,6 +16,7 @@ pub static MODEL_REGISTRY: LazyLock<base::ModelFactory> = LazyLock::new(|| {
     let mut factory = base::ModelFactory::new();
     register_all_models(&mut factory);
     factory.register::<custom::CustomModel>("custom");
+    factory.register::<huggingface::HuggingFaceModel>("huggingface");
     factory
 });
 

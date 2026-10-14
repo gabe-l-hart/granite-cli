@@ -63,13 +63,47 @@ pub fn detect_hardware() -> HardwareProfile {
 }
 
 fn total_memory_bytes() -> u64 {
-    sys_info::mem_info()
-        .map(|info| info.total * 1024)
-        .unwrap_or(0)
+    sys_info_mem()
 }
 
 fn bytes_to_gb(bytes: u64) -> f64 {
     bytes as f64 / (1024.0 * 1024.0 * 1024.0)
+}
+
+/*-- sys-info compatibility shim --*/
+/// Memory detection shim replacing the `sys-info` crate.
+/// On Linux reads `/proc/meminfo` directly to avoid a build-time native
+/// dependency that fails to compile on this platform.
+fn sys_info_mem() -> u64 {
+    sys_info_mem_raw().unwrap_or(0)
+}
+
+/// Returns total system memory in bytes.
+fn sys_info_mem_raw() -> Option<u64> {
+    if cfg!(target_os = "linux") {
+        std::fs::read_to_string("/proc/meminfo")
+            .ok()
+            .and_then(|s| parse_meminfo(&s).ok())
+    } else {
+        None
+    }
+}
+
+fn parse_meminfo(s: &str) -> std::io::Result<u64> {
+    let mut total: Option<u64> = None;
+    for line in s.lines() {
+        if let Some(rest) = line.strip_prefix("MemTotal:") {
+            if let Some(val) = rest.split_whitespace().next() {
+                if let Ok(v) = val.parse::<u64>() {
+                    total = Some(v);
+                }
+            }
+        }
+    }
+    Ok(match total {
+        Some(v) => v * 1024, // Convert KB to bytes (matching sys-info's total * 1024 behavior)
+        None => 0,
+    })
 }
 
 /*-- gpu detection --*/
