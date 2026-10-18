@@ -3274,12 +3274,13 @@ mod tests {
             capability_types,
             HashSet::from([
                 "vision-mcp",
+                "decision-mcp",
                 "sub-agent",
                 "sub-agent-code",
                 "sub-agent-explore",
                 "sub-agent-plan",
             ]),
-            "with only bob selected, vision-mcp (Mcp) and the sub-agent family (SubAgent) should be recommended: {capability_types:?}"
+            "with only bob selected, vision-mcp and decision-mcp (Mcp) and the sub-agent family (SubAgent) should be recommended: {capability_types:?}"
         );
     }
 
