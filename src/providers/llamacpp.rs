@@ -151,6 +151,11 @@ impl LlamaCppProvider {
             vec![ApiEndpoint::OpenAIAudioTranscription],
         );
 
+        map.insert(
+            ModelFunction::Decision,
+            vec![ApiEndpoint::JevSystemOne],
+        );
+
         map
     }
 
@@ -330,7 +335,7 @@ impl Provider for LlamaCppProvider {
     }
 
     fn supported_api_types(&self) -> Vec<ApiType> {
-        vec![ApiType::OpenAI, ApiType::Anthropic]
+        vec![ApiType::OpenAI, ApiType::Anthropic, ApiType::Jev]
     }
 
     fn base_url(&self) -> &str {
