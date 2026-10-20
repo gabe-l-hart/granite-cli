@@ -151,10 +151,7 @@ impl LlamaCppProvider {
             vec![ApiEndpoint::OpenAIAudioTranscription],
         );
 
-        map.insert(
-            ModelFunction::Decision,
-            vec![ApiEndpoint::JevSystemOne],
-        );
+        map.insert(ModelFunction::Decision, vec![ApiEndpoint::JevSystemOne]);
 
         map
     }
