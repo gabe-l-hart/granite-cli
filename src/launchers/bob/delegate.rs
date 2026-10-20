@@ -21,8 +21,8 @@ use rmcp::model::{
     Tool,
 };
 use rmcp::service::{MaybeSendFuture, RequestContext};
+use rmcp::transport::streamable_http_server::StreamableHttpService;
 use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
-use rmcp::transport::streamable_http_server::{StreamableHttpServerConfig, StreamableHttpService};
 use rmcp::{ErrorData, RoleServer, ServerHandler};
 
 // Local
@@ -286,7 +286,7 @@ pub(crate) async fn start_delegate_mcp_server(
     let service = StreamableHttpService::new(
         move || Ok(registry.clone()),
         Arc::new(LocalSessionManager::default()),
-        StreamableHttpServerConfig::default(),
+        crate::utils::subserver::mcp_http_server_config(),
     );
     let router = axum::Router::new().route_service("/mcp", service);
     let server = SubServer::spawn(router, "bob-sub-agent-delegate")?;

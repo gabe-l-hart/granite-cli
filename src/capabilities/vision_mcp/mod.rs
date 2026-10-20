@@ -27,8 +27,8 @@ use crate::providers::ApiType;
 use crate::registry::{ConfigConstructable, ConstructError};
 use crate::utils::subserver::SubServer;
 use async_trait::async_trait;
+use rmcp::transport::streamable_http_server::StreamableHttpService;
 use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
-use rmcp::transport::streamable_http_server::{StreamableHttpServerConfig, StreamableHttpService};
 use serde::{Deserialize, Serialize};
 use serde_valid::Validate;
 use std::collections::{HashMap, HashSet};
@@ -217,7 +217,7 @@ impl crate::capabilities::ResolvedCapability for ResolvedVisionMCPCapability {
         let service = StreamableHttpService::new(
             move || Ok(tool_registry.clone()),
             Arc::new(LocalSessionManager::default()),
-            StreamableHttpServerConfig::default(),
+            crate::utils::subserver::mcp_http_server_config(),
         );
         let router = axum::Router::new().route_service("/mcp", service);
         let server = SubServer::spawn(router, &format!("vision-mcp ({})", self.inner.instance_id))?;

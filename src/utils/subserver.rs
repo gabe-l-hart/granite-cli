@@ -15,6 +15,34 @@ use tokio::sync::oneshot;
 
 use_channel!("SBSRV");
 
+/// Hostnames a containerized agent uses to reach the host machine. Launchers
+/// that run the agent in a container (e.g. hermes via docker) rewrite the
+/// loopback URL of a hosted MCP server to one of these, so the server must
+/// accept them in the `Host` header.
+const CONTAINER_HOST_ALIASES: &[&str] = &[
+    "host.docker.internal",
+    "gateway.docker.internal",
+    "host.containers.internal",
+    "host.lima.internal",
+];
+
+/// Streamable HTTP config for an MCP server hosted in a `SubServer`.
+///
+/// rmcp's default only accepts loopback `Host` headers (DNS-rebinding
+/// protection), which rejects requests from a containerized agent with a 403.
+/// The listener is still bound to 127.0.0.1 only, so this just additionally
+/// accepts the well-known container-to-host aliases.
+pub(crate) fn mcp_http_server_config()
+-> rmcp::transport::streamable_http_server::StreamableHttpServerConfig {
+    let mut hosts: Vec<String> = ["localhost", "127.0.0.1", "::1"]
+        .iter()
+        .map(|h| h.to_string())
+        .collect();
+    hosts.extend(CONTAINER_HOST_ALIASES.iter().map(|h| h.to_string()));
+    rmcp::transport::streamable_http_server::StreamableHttpServerConfig::default()
+        .with_allowed_hosts(hosts)
+}
+
 /// A running background HTTP server bound to an ephemeral localhost port.
 pub struct SubServer {
     pub local_addr: SocketAddr,
@@ -73,6 +101,14 @@ impl SubServer {
 mod tests {
     use super::*;
     use axum::routing::get;
+
+    #[test]
+    fn mcp_http_server_config_allows_loopback_and_container_hosts() {
+        let hosts = mcp_http_server_config().allowed_hosts;
+        for expected in ["localhost", "127.0.0.1", "::1", "host.docker.internal"] {
+            assert!(hosts.iter().any(|h| h == expected), "missing {expected}");
+        }
+    }
 
     #[tokio::test]
     async fn spawn_serves_the_given_router_and_shutdown_frees_the_port() {
