@@ -307,7 +307,7 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = OpenAIProviderConfig::default();
-        assert_eq!(config.base_url, "http://localhost:8080");
+        assert_eq!(config.base_url, "http://localhost:8000");
         assert!(config.api_key.is_none());
         assert_eq!(config.timeout_secs, 10);
         assert!(config.verify_ssl);
@@ -422,7 +422,7 @@ mod tests {
     fn test_provider_function_endpoints() {
         // base_url has no default: an openai-compatible provider is defined
         // by the endpoint it talks to, so the settings have to state one.
-        let cfg = serde_json::json!({ "base_url": "http://localhost:8080" });
+        let cfg = serde_json::json!({ "base_url": "http://localhost:8000" });
         let provider = OpenAIProvider::new("my-openai", &cfg).unwrap();
         let endpoints = provider.function_endpoints();
         assert!(endpoints.contains_key(&ModelFunction::Chat));
