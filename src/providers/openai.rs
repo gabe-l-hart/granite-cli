@@ -14,8 +14,7 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub(crate) struct OpenAIProviderConfig {
     /// Base URL for the OpenAI-compatible API
-    #[serde(default = "default_base_url")]
-    pub base_url: String,
+    pub(crate) base_url: String,
 
     /// API key for authentication (optional for local providers)
     pub(crate) api_key: Option<Secret>,
