@@ -86,14 +86,6 @@ impl crate::registry::Named for StaticCapabilityBinding {
 }
 
 impl crate::capabilities::CapabilityInfo for StaticCapabilityBinding {
-    fn name(&self) -> &str {
-        "Static Binding"
-    }
-
-    fn description(&self) -> &str {
-        "internal: hands a pre-resolved binding to a backing launcher"
-    }
-
     fn binding_types(&self) -> std::collections::HashSet<BindingType> {
         std::collections::HashSet::from([self.binding.binding_type()])
     }
@@ -335,7 +327,7 @@ fn job_tool_input_schema() -> serde_json::Map<String, serde_json::Value> {
 /// the trait method's `&self` / `+ '_` lifetime by cloning `self` into an
 /// owned `async move` block.
 #[derive(Clone)]
-pub(crate) struct DelegateToolRegistry {
+struct DelegateToolRegistry {
     pi_binary: Arc<PathBuf>,
     agents: Arc<Vec<DelegateSubAgent>>,
     jobs: Arc<JobTable>,

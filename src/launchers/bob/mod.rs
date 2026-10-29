@@ -34,11 +34,11 @@ use_channel!("BOB");
 const DEFAULT_USAGE_POLL_INTERVAL_SECS: u64 = 5;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, schemars::JsonSchema)]
-pub struct BobLauncherConfig {
+pub(crate) struct BobLauncherConfig {
     /// Override path to the `bob` binary for non-PATH installs.
     /// Leave unset to use PATH lookup.
     #[serde(default)]
-    pub command_path: Option<String>,
+    pub(crate) command_path: Option<String>,
 
     /// Override path to the `pi` binary used to run any bound sub-agents
     /// (see `bob/delegate.rs`). Leave unset to use PATH lookup, falling back
@@ -46,20 +46,20 @@ pub struct BobLauncherConfig {
     /// from `command_path`, which overrides `bob` itself -- the two binaries
     /// are unrelated.
     #[serde(default)]
-    pub pi_command_path: Option<String>,
+    pi_command_path: Option<String>,
 
     /// Override path to bob's SQLite database for usage polling.
     /// Leave unset to use `~/.bob/db/bob.db`.
     #[serde(default)]
-    pub bob_db_path: Option<String>,
+    bob_db_path: Option<String>,
 
     /// Seconds between usage polls while bob is running. Default 5.
     /// Leave unset to use the default (5s).
     #[serde(default)]
-    pub usage_poll_interval_secs: Option<u64>,
+    usage_poll_interval_secs: Option<u64>,
 }
 
-pub struct BobLauncher {
+pub(crate) struct BobLauncher {
     instance_id: String,
     config: BobLauncherConfig,
     /// `(server_name, binding)` for every MCP-capable capability bound to
@@ -91,7 +91,7 @@ impl BobLauncher {
     /// Resolve the effective DB path: use the config override if set,
     /// otherwise `~/.bob/db/bob.db`. Falls back to a relative path if
     /// `dirs::home_dir()` is `None`.
-    pub(crate) fn bob_db_path(&self) -> PathBuf {
+    fn bob_db_path(&self) -> PathBuf {
         if let Some(ref p) = self.config.bob_db_path {
             return PathBuf::from(p);
         }
@@ -107,7 +107,7 @@ impl BobLauncher {
     /// config value of 0 somehow slips through (e.g. a hand-edited config
     /// file), since `tokio::time::interval` panics on a zero duration and this
     /// whole feature must never crash a launch over a config quirk.
-    pub(crate) fn usage_poll_interval(&self) -> std::time::Duration {
+    fn usage_poll_interval(&self) -> std::time::Duration {
         let secs = self
             .config
             .usage_poll_interval_secs
@@ -125,10 +125,6 @@ impl crate::registry::Named for BobLauncher {
 
 #[async_trait]
 impl Launcher for BobLauncher {
-    fn name(&self) -> &str {
-        "Bob CLI"
-    }
-
     fn command(&self) -> &str {
         self.config.command_path.as_deref().unwrap_or("bob")
     }
@@ -552,12 +548,6 @@ mod tests {
     }
 
     impl crate::capabilities::CapabilityInfo for FakeMcpCapability {
-        fn name(&self) -> &str {
-            "Fake Mcp"
-        }
-        fn description(&self) -> &str {
-            "test double"
-        }
         fn binding_types(&self) -> HashSet<BindingType> {
             HashSet::from([BindingType::Mcp])
         }
@@ -583,12 +573,6 @@ mod tests {
     }
 
     impl crate::capabilities::CapabilityInfo for FakeSubAgentCapability {
-        fn name(&self) -> &str {
-            "Fake SubAgent"
-        }
-        fn description(&self) -> &str {
-            "test double"
-        }
         fn binding_types(&self) -> HashSet<BindingType> {
             HashSet::from([BindingType::SubAgent])
         }

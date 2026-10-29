@@ -1,12 +1,12 @@
 mod secret;
-pub use secret::Secret;
+pub(crate) use secret::Secret;
 
 /*-- Generic Factory Infrastructure ------------------------------------------*/
 
 /// Unit struct for types that have no structured config.
 /// Used by test doubles and impls that genuinely have no config to declare.
 #[derive(schemars::JsonSchema, serde::Serialize, serde::Deserialize, Default)]
-pub struct NoConfig {}
+pub(crate) struct NoConfig {}
 
 /// Why a factory could not produce an instance.
 ///
@@ -14,7 +14,7 @@ pub struct NoConfig {}
 /// the message: an unregistered type name is a different problem, with a
 /// different repair, from settings that cannot be read.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ConstructError {
+pub(crate) enum ConstructError {
     /// The name given is not a key in this kind's registry.
     UnknownType { type_name: String },
     /// The settings blob does not produce an instance of this type, because
@@ -27,7 +27,7 @@ impl ConstructError {
     /// Report settings that cannot be read. `detail` is whatever the
     /// deserialiser or the builder said; the caller that names the instance
     /// adds the rest.
-    pub fn settings(detail: impl std::fmt::Display) -> Self {
+    pub(crate) fn settings(detail: impl std::fmt::Display) -> Self {
         Self::Settings {
             detail: detail.to_string(),
         }
@@ -47,7 +47,7 @@ impl std::error::Error for ConstructError {}
 
 /// Core trait that all factory-managed types must implement.
 /// Provides construction from a configuration object.
-pub trait ConfigConstructable {
+pub(crate) trait ConfigConstructable {
     /// The structured config type for this implementation.
     /// Must implement `JsonSchema + Serialize + Default`.
     type Config: schemars::JsonSchema + serde::Serialize + Default;
@@ -82,7 +82,7 @@ pub trait ConfigConstructable {
 /// The value is whatever `instance_id` was passed to
 /// [`ConfigConstructable::new`], so it round-trips the config key that produced
 /// the instance.
-pub trait Named {
+pub(crate) trait Named {
     fn instance_id(&self) -> &str;
 }
 
@@ -165,7 +165,7 @@ macro_rules! define_factory {
 
             /// Trait that implementations must provide to supply metadata.
             /// This is the public interface for implementations to describe themselves.
-            pub trait [<Has $trait Metadata>] {
+            pub(crate) trait [<Has $trait Metadata>] {
                 /// Return metadata describing this implementation
                 fn metadata() -> $metadata;
             }
@@ -211,7 +211,7 @@ macro_rules! define_factory {
             /// - Construct instances by name
             /// - Query metadata
             /// - List all registered implementations
-            pub struct $factory {
+            pub(crate) struct $factory {
                 registry: std::collections::HashMap<&'static str, Box<dyn [<$trait Metadata_>]>>,
             }
 

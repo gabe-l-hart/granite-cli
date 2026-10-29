@@ -101,7 +101,7 @@ fn search_match_reason(id: &str, m: &ModelMetadata, q: &str) -> Option<String> {
     None
 }
 
-pub struct ModelCommands;
+pub(crate) struct ModelCommands;
 
 /*-- Model -> Provider dependency --------------------------------------------*/
 
@@ -167,7 +167,7 @@ impl DependsOn<dyn Provider> for AnyProviderRequirement {
 impl ModelCommands {
     /// Rows for the model search table: [id, family, size, context, type].
     /// Shared by the CLI command and the TUI.
-    pub(crate) fn search_rows(query: &str) -> Vec<Vec<String>> {
+    fn search_rows(query: &str) -> Vec<Vec<String>> {
         Self::search_rows_in(
             MODEL_REGISTRY
                 .entries()
@@ -211,7 +211,7 @@ impl ModelCommands {
         rows.into_iter().map(|(row, _)| row).collect()
     }
 
-    pub fn search(ctx: &crate::AppContext, query: &str) -> Result<()> {
+    pub(crate) fn search(ctx: &crate::AppContext, query: &str) -> Result<()> {
         let rows = Self::search_rows(query);
         if rows.is_empty() {
             ctx.ui.info(&format!("No models found matching '{query}'."));
@@ -345,7 +345,7 @@ impl ModelCommands {
     ///   check entirely (`None`).
     /// - otherwise: restrict to the named provider ids, erroring if any is
     ///   not a configured+enabled provider.
-    pub fn recommend(
+    pub(crate) fn recommend(
         ctx: &crate::AppContext,
         filter_type: Option<ModelType>,
         providers_arg: &[String],
@@ -440,7 +440,7 @@ impl ModelCommands {
 
     /// Rows for the model catalog table: [id, family, size, context, type].
     /// Shared by the CLI command and the TUI.
-    pub(crate) fn catalog_rows(filter_type: Option<&ModelType>) -> Vec<Vec<String>> {
+    fn catalog_rows(filter_type: Option<&ModelType>) -> Vec<Vec<String>> {
         let models = MODEL_REGISTRY.entries();
         let mut rows: Vec<(Vec<String>, ModelMetadata)> = models
             .iter()
@@ -460,7 +460,7 @@ impl ModelCommands {
         rows.into_iter().map(|(row, _)| row).collect()
     }
 
-    pub fn catalog(ctx: &crate::AppContext, filter_type: Option<ModelType>) -> Result<()> {
+    pub(crate) fn catalog(ctx: &crate::AppContext, filter_type: Option<ModelType>) -> Result<()> {
         let rows = Self::catalog_rows(filter_type.as_ref());
         if rows.is_empty() {
             ctx.ui.info(&format!(
@@ -480,7 +480,7 @@ impl ModelCommands {
         Ok(())
     }
 
-    pub fn list(ctx: &crate::AppContext, filter_type: Option<ModelType>) -> Result<()> {
+    pub(crate) fn list(ctx: &crate::AppContext, filter_type: Option<ModelType>) -> Result<()> {
         let notes = crate::commands::shared::remediation::dangling_notes(ctx, RefKind::Model);
         let source = ctx.sources().models();
         let mut enriched: Vec<(Vec<String>, ModelMetadata)> = Vec::new();
@@ -592,13 +592,13 @@ impl ModelCommands {
     /// registry key is not in the registry. Shared by the CLI command and
     /// the TUI, which only ever browses the catalog, never a configured
     /// instance's live values.
-    pub(crate) fn info_fields(model_type: &str) -> Option<Vec<(&'static str, String)>> {
+    fn info_fields(model_type: &str) -> Option<Vec<(&'static str, String)>> {
         MODEL_REGISTRY
             .get(model_type)
             .map(|m| Self::metadata_fields(&m))
     }
 
-    pub async fn info(ctx: &mut crate::AppContext, id: &str) -> Result<()> {
+    pub(crate) async fn info(ctx: &mut crate::AppContext, id: &str) -> Result<()> {
         // Only a configured instance can have a broken reference. An id that
         // names a catalog type is being browsed, not diagnosed.
         if ctx.config().get_model(id).is_some() {
@@ -677,7 +677,7 @@ impl ModelCommands {
     /// models).
     /// `force_overwrite` skips the "already configured, overwrite?" prompt,
     /// for callers that have already obtained confirmation (e.g. remediation).
-    pub async fn setup(
+    pub(crate) async fn setup(
         ctx: &mut crate::AppContext,
         model_type: &str,
         instance_id: Option<&str>,
@@ -852,7 +852,7 @@ impl ModelCommands {
         Ok(())
     }
 
-    pub async fn pull(ctx: &mut crate::AppContext, model_id: &str) -> Result<()> {
+    pub(crate) async fn pull(ctx: &mut crate::AppContext, model_id: &str) -> Result<()> {
         let configured = ctx.config().get_model(model_id);
         if configured.is_none() && MODEL_REGISTRY.get(model_id).is_none() {
             ctx.ui
@@ -938,7 +938,7 @@ impl ModelCommands {
     /// `policy` controls what happens to dependents: `Cascade` removes them
     /// too, `Refuse` aborts, `Leave` strands them. `None` asks interactively
     /// or leaves in non-interactive sessions.
-    pub fn remove(
+    pub(crate) fn remove(
         ctx: &mut crate::AppContext,
         model_id: &str,
         policy: Option<crate::commands::shared::remediation::DependentsPolicy>,
@@ -1048,7 +1048,7 @@ impl ModelCommands {
 /// reporting progress through `ui`. Separated from `ModelCommands::pull` so
 /// a future `launch` pre-launch step can call it directly without going
 /// through config lookup or CLI-specific error messages.
-pub async fn ensure_model_pulled(
+async fn ensure_model_pulled(
     provider: &dyn Provider,
     model: &ModelMetadata,
     variant: &ModelVariant,
@@ -1383,7 +1383,7 @@ mod tests {
             name: "Test Provider".to_string(),
             description: "".to_string(),
             provider_type: ProviderType::Local,
-            default_endpoint: "http://localhost".to_string(),
+            default_base_urls: vec!["http://localhost".to_string()],
             supported_api_types: vec![],
             default_function_endpoints: std::collections::HashMap::new(),
             supported_formats: formats,
