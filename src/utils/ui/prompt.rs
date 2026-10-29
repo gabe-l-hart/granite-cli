@@ -289,10 +289,12 @@ fn prompt_enum_scalar(
 
 /// One-shot Multi-Select over an array of enum items (a `Vec<Enum>` field),
 /// replacing the generic per-item "Add?" loop with a single checklist
-/// prompt. Choices present in `default` start checked. A checked `Literal`
-/// is emitted as-is; a checked `Tagged` choice (which carries its own
-/// fields) is prompted for those fields -- prefilled from the matching
-/// existing entries -- and may be repeated via "Add another?".
+/// prompt. Choices present in `default` start checked; when `default` is
+/// empty, all `Literal` choices start checked so the default is "all tools"
+/// rather than "none". A checked `Literal` is emitted as-is; a checked
+/// `Tagged` choice (which carries its own fields) is prompted for those
+/// fields -- prefilled from the matching existing entries -- and may be
+/// repeated via "Add another?".
 fn prompt_enum_array(
     ui: &dyn Ui,
     root: &Value,
@@ -306,7 +308,13 @@ fn prompt_enum_array(
     let defaults: Vec<bool> = choices
         .iter()
         .map(|c| match c {
-            EnumChoice::Literal(l) => default_items.iter().any(|v| v.as_str() == Some(l)),
+            EnumChoice::Literal(l) => {
+                if default_items.is_empty() {
+                    true
+                } else {
+                    default_items.iter().any(|v| v.as_str() == Some(l))
+                }
+            }
             EnumChoice::Tagged { key, .. } => {
                 default_items.iter().any(|v| v.get(key.as_str()).is_some())
             }
@@ -1127,6 +1135,35 @@ mod tests {
         assert!(!ui.confirm_prompts.borrow()[0].1);
         // The existing Mcp entry prefilled the text prompt.
         assert_eq!(ui.text_prompts.borrow()[0].1, "old");
+    }
+
+    #[test]
+    fn prompt_from_schema_prechecks_all_literal_choices_when_defaults_are_empty() {
+        use crate::utils::ui::base::tests::CaptureUi;
+
+        #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+        #[allow(dead_code)]
+        enum TestTool {
+            FileRead,
+            FileWrite,
+            Mcp { server: String },
+        }
+
+        #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+        struct TestConfig {
+            tools: Vec<TestTool>,
+        }
+
+        let ui = CaptureUi::default();
+        // User hits Enter accepting all default-checked literal items (indices 0 and 1).
+        ui.multi_select_answers.borrow_mut().push_back(vec![0, 1]);
+
+        let schema = schemars::schema_for!(TestConfig);
+        let result = prompt_from_schema(&ui, &schema, &json!({})).unwrap();
+
+        assert_eq!(result, json!({"tools": ["FileRead", "FileWrite"]}));
+        let prompts = ui.multi_select_prompts.borrow();
+        assert_eq!(prompts[0].2, vec![true, true, false]);
     }
 
     #[test]
