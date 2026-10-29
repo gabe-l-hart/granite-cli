@@ -49,7 +49,7 @@ struct LMStudioJobStatus {
 pub(crate) struct LMStudioProviderConfig {
     /// Base URL for the LM Studio server
     #[serde(default = "default_base_url")]
-    pub base_url: String,
+    pub(crate) base_url: String,
 
     /// API key for authentication (optional)
     pub(crate) api_key: Option<Secret>,

@@ -52,7 +52,7 @@ fn find_double_newline(buf: &[u8]) -> Option<usize> {
 pub(crate) struct LlamaCppProviderConfig {
     /// Base URL for the llama.cpp server
     #[serde(default = "default_base_url")]
-    pub base_url: String,
+    pub(crate) base_url: String,
 
     /// API key for authentication (optional)
     pub(crate) api_key: Option<Secret>,
@@ -71,7 +71,7 @@ pub(crate) struct LlamaCppProviderConfig {
 }
 
 fn default_base_url() -> String {
-    "http://localhost:8080".to_string()
+    LlamaCppProvider::metadata().default_base_urls[0].clone()
 }
 
 fn default_timeout() -> u64 {

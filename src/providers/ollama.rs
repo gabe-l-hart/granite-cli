@@ -18,7 +18,7 @@ use std::time::Duration;
 pub(crate) struct OllamaProviderConfig {
     /// Base URL for the Ollama API
     #[serde(default = "default_base_url")]
-    pub base_url: String,
+    pub(crate) base_url: String,
 
     /// API key for authentication (optional)
     pub(crate) api_key: Option<Secret>,

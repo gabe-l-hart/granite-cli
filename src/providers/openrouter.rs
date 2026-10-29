@@ -20,8 +20,8 @@ pub(crate) struct OpenRouterProviderConfig {
     /// being asked for: an instance that does not say otherwise talks to
     /// `https://openrouter.ai/api`.
     #[serde(default = "default_base_url")]
-    pub base_url: String,
-    pub api_key: Option<Secret>,
+    pub(crate) base_url: String,
+    pub(crate) api_key: Option<Secret>,
     #[serde(default = "default_timeout")]
     pub(crate) timeout_secs: u64,
     #[serde(default = "default_verify_ssl")]

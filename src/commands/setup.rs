@@ -123,9 +123,24 @@ impl Discover {
                 continue;
             }
 
-            // Construct a transient instance with default config and run health check
             let default_config = PROVIDER_REGISTRY.default_config(provider_type);
-            let result = PROVIDER_REGISTRY.construct(provider_type, provider_type, &default_config);
+            let (discovered_base_url, health_error) =
+                first_healthy_base_url(&metadata.default_base_urls, |base_url| {
+                    let mut config = default_config.clone();
+                    async move {
+                        if !config.is_object() {
+                            return Err("Default provider config is not an object".to_string());
+                        }
+                        config["base_url"] = serde_json::Value::String(base_url);
+                        let provider = PROVIDER_REGISTRY
+                            .construct(provider_type, provider_type, &config)
+                            .map_err(|e| format!("Could not construct provider: {e}"))?;
+                        Self::run_health_check(&*provider)
+                            .await
+                            .map_err(|e| format!("Health check failed: {e}"))
+                    }
+                })
+                .await;
 
             recommendations.push(Recommendation::Provider {
                 provider_type,
@@ -2244,7 +2259,17 @@ impl SetupCommands {
                 continue;
             }
             ui.info(&format!("\nConfiguring provider: {provider_id}..."));
-            let default_config = PROVIDER_REGISTRY.default_config(provider_id);
+            let mut default_config = PROVIDER_REGISTRY.default_config(provider_id);
+            if let Some(base_url) = discovery.recommendations.iter().find_map(|rec| match rec {
+                Recommendation::Provider {
+                    provider_type,
+                    discovered_base_url: Some(base_url),
+                    ..
+                } if *provider_type == provider_id => Some(base_url),
+                _ => None,
+            }) {
+                default_config["base_url"] = base_url.clone().into();
+            }
 
             let provider_config = crate::config::ProviderConfig {
                 provider_id: provider_id.clone(),

@@ -56,16 +56,16 @@ impl ConfigPathTranslator for recommended_config::RecommendedConfiguration {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Config {
-    pub models: HashMap<String, ModelConfig>,
-    pub providers: HashMap<String, ProviderConfig>,
-    pub capabilities: HashMap<String, CapabilityConfig>,
-    pub launchers: HashMap<String, LauncherConfig>,
-    pub recommended_configs: HashMap<String, recommended_config::RecommendedConfiguration>,
+pub(crate) struct Config {
+    pub(crate) models: HashMap<String, ModelConfig>,
+    pub(crate) providers: HashMap<String, ProviderConfig>,
+    pub(crate) capabilities: HashMap<String, CapabilityConfig>,
+    pub(crate) launchers: HashMap<String, LauncherConfig>,
+    pub(crate) recommended_configs: HashMap<String, recommended_config::RecommendedConfiguration>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelConfig {
+pub(crate) struct ModelConfig {
     /// Instance id -- the config/file key this model is stored under.
     /// Defaults to `model_type` (see `commands::ModelCommands::setup`), but
     /// may differ to let the same catalog type be configured more than once
