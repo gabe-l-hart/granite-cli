@@ -44,7 +44,7 @@ pub(crate) struct OpenAIProviderConfig {
 }
 
 fn default_base_url() -> String {
-    "http://localhost:8080".to_string()
+    "http://localhost:8000".to_string()
 }
 
 fn default_timeout() -> u64 {
