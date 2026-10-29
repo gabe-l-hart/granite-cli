@@ -97,7 +97,7 @@ pub(crate) fn prompt_with_current(
 /// do, and a session that cannot ask refuses with exit code 1 and an error
 /// naming the three policies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-pub enum DependentsPolicy {
+pub(crate) enum DependentsPolicy {
     /// Remove the target and every dependent automatically, without asking.
     /// Cascades recursively so dependents-of-dependents are taken too.
     Cascade,

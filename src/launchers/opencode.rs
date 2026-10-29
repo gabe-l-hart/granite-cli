@@ -38,11 +38,11 @@ use_channel!("OPNCD");
 /*-- public --*/
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, schemars::JsonSchema)]
-pub struct OpenCodeLauncherConfig {
+pub(crate) struct OpenCodeLauncherConfig {
     /// Override path to the `opencode` binary for non-PATH installs.
     /// Leave unset to use PATH lookup.
     #[serde(default)]
-    pub command_path: Option<String>,
+    pub(crate) command_path: Option<String>,
 
     /// Extra keys merged (shallow, last-write-wins) into every generated
     /// provider entry -- e.g. `headers` a particular server needs. Necessary
@@ -52,10 +52,10 @@ pub struct OpenCodeLauncherConfig {
     /// override meant for one provider (e.g. a dialect-specific `npm`
     /// package) will also land on any other bound provider.
     #[serde(default)]
-    pub provider_overrides: Option<serde_json::Value>,
+    pub(crate) provider_overrides: Option<serde_json::Value>,
 }
 
-pub struct OpenCodeLauncher {
+pub(crate) struct OpenCodeLauncher {
     instance_id: String,
     config: OpenCodeLauncherConfig,
     bound_agent_model: Option<AgentModelBinding>,
@@ -96,10 +96,6 @@ impl crate::registry::Named for OpenCodeLauncher {
 
 #[async_trait]
 impl Launcher for OpenCodeLauncher {
-    fn name(&self) -> &str {
-        "OpenCode CLI"
-    }
-
     fn command(&self) -> &str {
         self.config.command_path.as_deref().unwrap_or("opencode")
     }
@@ -1848,12 +1844,6 @@ mod tests {
     }
 
     impl crate::capabilities::CapabilityInfo for FakeSubAgentCapability {
-        fn name(&self) -> &str {
-            "Fake Sub-Agent"
-        }
-        fn description(&self) -> &str {
-            "test double"
-        }
         fn binding_types(&self) -> HashSet<BindingType> {
             HashSet::from([BindingType::SubAgent])
         }

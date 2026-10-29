@@ -13,11 +13,11 @@ use_channel!("LNCHR");
 
 /*-- public --*/
 
-pub struct LauncherCommands;
+pub(crate) struct LauncherCommands;
 
 impl LauncherCommands {
     /// Show all launcher types registered in the catalog.
-    pub fn catalog(ctx: &crate::AppContext) -> Result<()> {
+    pub(crate) fn catalog(ctx: &crate::AppContext) -> Result<()> {
         let launchers = LAUNCHER_REGISTRY.entries();
 
         let mut rows: Vec<Vec<String>> = launchers
@@ -35,7 +35,7 @@ impl LauncherCommands {
     }
 
     /// List all configured launcher instances.
-    pub fn list(ctx: &crate::AppContext) -> Result<()> {
+    pub(crate) fn list(ctx: &crate::AppContext) -> Result<()> {
         let notes = crate::commands::shared::remediation::dangling_notes(ctx, RefKind::Launcher);
         let mut rows: Vec<Vec<String>> = ctx
             .config()
@@ -72,7 +72,7 @@ impl LauncherCommands {
         Ok(())
     }
 
-    pub fn info(ctx: &crate::AppContext, id: &str) -> Result<()> {
+    pub(crate) fn info(ctx: &crate::AppContext, id: &str) -> Result<()> {
         let configured = ctx.config().get_launcher(id);
 
         let metadata = configured
@@ -161,7 +161,7 @@ impl LauncherCommands {
     /// accidentally creating duplicate configs for the same tool.
     /// `force_overwrite` skips the "already configured, overwrite?" prompt,
     /// for callers that have already obtained confirmation (e.g. remediation).
-    pub async fn setup(
+    pub(crate) async fn setup(
         ctx: &mut crate::AppContext,
         launcher_type: &str,
         instance_id: Option<&str>,
@@ -326,7 +326,7 @@ impl LauncherCommands {
     /// that cannot bind would fail later during the launch itself. This runs
     /// before anything about the environment, so a configuration problem is
     /// reported before a missing binary is.
-    pub async fn prelaunch(ctx: &mut crate::AppContext, launcher_id: &str) -> Result<()> {
+    pub(crate) async fn prelaunch(ctx: &mut crate::AppContext, launcher_id: &str) -> Result<()> {
         let outcome = crate::commands::shared::remediation::remediate(
             ctx,
             RefKind::Launcher,
@@ -354,7 +354,7 @@ impl LauncherCommands {
     /// `policy` controls what happens to dependents: `Cascade` removes them
     /// too, `Refuse` aborts, `Leave` strands them. `None` asks interactively
     /// or leaves in non-interactive sessions.
-    pub fn remove(
+    pub(crate) fn remove(
         ctx: &mut crate::AppContext,
         launcher_id: &str,
         policy: Option<crate::commands::shared::remediation::DependentsPolicy>,
@@ -567,6 +567,7 @@ mod tests {
         crate::AppContext::new(Config::default(), Arc::new(CaptureUi::default()))
     }
 
+    #[cfg(unix)]
     fn capture(ctx: &crate::AppContext) -> &CaptureUi {
         (&*ctx.ui as &dyn std::any::Any)
             .downcast_ref::<CaptureUi>()
@@ -938,8 +939,8 @@ mod tests {
     }
 
     // Helper: insert a minimal agent-model capability config into ctx.
-    // Also adds the model to config.models so CapabilitySource::from_config
-    // can construct the underlying AgentModelCapability.
+    // Also adds the model to config.models so the shared source set can
+    // construct the underlying AgentModelCapability.
     fn add_capability(ctx: &mut crate::AppContext, cap_id: &str, model_id: &str) {
         // The model needs a provider to bind, so a capability is only
         // constructible, and so only listed, with one configured.

@@ -11,12 +11,12 @@ use serde::{Deserialize, Serialize};
 /// MCP server). Cache fields are populated on a best-effort basis -- not
 /// every `ApiType` exposes cache accounting.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct UsageStats {
-    pub requests: u64,
-    pub input_tokens: u64,
-    pub output_tokens: u64,
-    pub cache_creation_tokens: u64,
-    pub cache_read_tokens: u64,
+pub(crate) struct UsageStats {
+    pub(crate) requests: u64,
+    pub(crate) input_tokens: u64,
+    pub(crate) output_tokens: u64,
+    pub(crate) cache_creation_tokens: u64,
+    pub(crate) cache_read_tokens: u64,
 }
 
 impl UsageStats {
@@ -47,7 +47,7 @@ impl UsageStats {
 /// [`UsageTracker::set_notifier`]. When set, every call to [`record`] sends
 /// a non-blocking notification so a background writer task can react to new
 /// usage immediately
-pub struct UsageTracker {
+pub(crate) struct UsageTracker {
     stats: Mutex<HashMap<String, UsageStats>>,
     /// Fires `()` on every [`record`] call when set. The `watch` channel
     /// stores only the latest value, so rapid successive records coalesce into
@@ -67,19 +67,19 @@ impl Default for UsageTracker {
 }
 
 impl UsageTracker {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
     /// Attach a [`tokio::sync::watch::Sender`] that will be notified on
     /// every [`record`] call. Replaces any previously set notifier.
-    pub fn set_notifier(&self, sender: tokio::sync::watch::Sender<()>) {
+    pub(crate) fn set_notifier(&self, sender: tokio::sync::watch::Sender<()>) {
         *self.notifier.lock().unwrap() = Some(sender);
     }
 
     /// Fold `delta` into the running totals for `label`, plus one request.
     /// Fires the attached notifier (if any) after updating, without blocking.
-    pub fn record(&self, label: &str, delta: UsageStats) {
+    pub(crate) fn record(&self, label: &str, delta: UsageStats) {
         let mut stats = self.stats.lock().unwrap();
         let entry = stats.entry(label.to_string()).or_default();
         entry.add(&UsageStats {
@@ -99,7 +99,7 @@ impl UsageTracker {
     /// caller already has the authoritative absolute total, e.g. read from an
     /// external store like bob.db). Fires the attached notifier (if any) after
     /// updating, without blocking.
-    pub fn set(&self, label: &str, stats: UsageStats) {
+    pub(crate) fn set(&self, label: &str, stats: UsageStats) {
         self.stats.lock().unwrap().insert(label.to_string(), stats);
         if let Some(tx) = self.notifier.lock().unwrap().as_ref() {
             let _ = tx.send(());
@@ -107,7 +107,7 @@ impl UsageTracker {
     }
 
     /// A point-in-time copy of all recorded totals, keyed by label.
-    pub fn snapshot(&self) -> HashMap<String, UsageStats> {
+    pub(crate) fn snapshot(&self) -> HashMap<String, UsageStats> {
         self.stats.lock().unwrap().clone()
     }
 }
@@ -128,7 +128,7 @@ impl UsageTracker {
 ///   body.
 /// - Ollama: top-level `prompt_eval_count`/`eval_count`, present only on the
 ///   NDJSON line with `done: true`, or on a non-streaming body.
-pub fn parse_usage(value: &serde_json::Value) -> Option<UsageStats> {
+pub(crate) fn parse_usage(value: &serde_json::Value) -> Option<UsageStats> {
     let usage_obj = value
         .get("message")
         .and_then(|m| m.get("usage"))

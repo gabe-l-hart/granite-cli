@@ -14,7 +14,7 @@ use_channel!("PRMPT");
 /// arrays (indented), and masks input for fields whose schema is marked
 /// `"format": "password"` (see `registry::Secret`) rather than guessing from
 /// field names.
-pub fn prompt_from_schema(
+pub(crate) fn prompt_from_schema(
     ui: &dyn Ui,
     schema: &schemars::Schema,
     defaults: &Value,

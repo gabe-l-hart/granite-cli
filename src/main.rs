@@ -1,20 +1,20 @@
-pub mod capabilities;
-pub mod commands;
-pub mod config;
+mod capabilities;
+mod commands;
+mod config;
 mod context;
-pub mod dependency;
-pub mod launchers;
-pub mod models;
-pub mod proxy;
-pub mod registry;
-pub mod session;
-pub mod sources;
-pub mod utils;
-pub mod version {
+mod dependency;
+mod launchers;
+mod models;
+mod proxy;
+mod registry;
+mod session;
+mod sources;
+mod utils;
+mod version {
     include!(concat!(env!("OUT_DIR"), "/version.rs"));
 }
 // TODO: Re-enable once rewritten -- pub mod di;
-pub mod providers;
+mod providers;
 
 // Third Party
 use alog::{MessageLevel, alog};
@@ -26,7 +26,7 @@ use commands::{
     CapabilityCommands, HardwareCommands, LauncherCommands, ModelCommands, ProviderCommands,
     SetupCommands,
 };
-pub use context::AppContext;
+pub(crate) use context::AppContext;
 use utils::ui::{UI_REGISTRY, Ui, run_interactive_tui};
 
 // Hoist paste macro for use in our own macros

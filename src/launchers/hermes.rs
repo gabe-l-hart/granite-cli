@@ -38,20 +38,20 @@ use_channel!("HRMES");
 /*-- public --*/
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, schemars::JsonSchema)]
-pub struct HermesLauncherConfig {
+pub(crate) struct HermesLauncherConfig {
     /// Override path to the `hermes` binary for non-PATH installs.
     /// Leave unset to use PATH lookup.
     #[serde(default)]
-    pub command_path: Option<String>,
+    pub(crate) command_path: Option<String>,
 
     /// Extra keys merged (shallow, last-write-wins) into the generated
     /// hermes config file -- e.g. `model.context_length` or provider-specific
     /// overrides. Necessary because the entry is regenerated on every launch.
     #[serde(default)]
-    pub model_overrides: Option<serde_json::Value>,
+    pub(crate) model_overrides: Option<serde_json::Value>,
 }
 
-pub struct HermesLauncher {
+pub(crate) struct HermesLauncher {
     instance_id: String,
     config: HermesLauncherConfig,
     bound_binding: Option<AgentModelBinding>,
@@ -86,10 +86,6 @@ impl crate::registry::Named for HermesLauncher {
 
 #[async_trait]
 impl Launcher for HermesLauncher {
-    fn name(&self) -> &str {
-        "Hermes CLI"
-    }
-
     fn command(&self) -> &str {
         self.config.command_path.as_deref().unwrap_or("hermes")
     }

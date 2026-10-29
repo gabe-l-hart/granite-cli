@@ -44,7 +44,7 @@ impl McpServerType {
 /// A standard MCP server entry. The instance id is the server name.
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct McpServerCapabilityConfig {
+pub(crate) struct McpServerCapabilityConfig {
     /// Transport: `stdio`, `http` (Streamable HTTP) or `sse`.
     #[serde(rename = "type")]
     pub(crate) server_type: McpServerType,
@@ -82,14 +82,14 @@ impl Default for McpServerCapabilityConfig {
     }
 }
 
-pub struct McpServerCapability {
+pub(crate) struct McpServerCapability {
     instance_id: String,
     config: McpServerCapabilityConfig,
 }
 
 /// [`McpServerCapability`] has no references to resolve, so this only marks
 /// that `resolve_refs` ran.
-pub struct ResolvedMcpServerCapability {
+pub(crate) struct ResolvedMcpServerCapability {
     inner: McpServerCapability,
 }
 
@@ -121,14 +121,6 @@ impl crate::registry::Named for ResolvedMcpServerCapability {
 }
 
 impl CapabilityInfo for McpServerCapability {
-    fn name(&self) -> &str {
-        "MCP Server"
-    }
-
-    fn description(&self) -> &str {
-        DESCRIPTION
-    }
-
     fn binding_types(&self) -> HashSet<BindingType> {
         HashSet::from([BindingType::Mcp])
     }
@@ -139,14 +131,6 @@ impl CapabilityInfo for McpServerCapability {
 }
 
 impl CapabilityInfo for ResolvedMcpServerCapability {
-    fn name(&self) -> &str {
-        self.inner.name()
-    }
-
-    fn description(&self) -> &str {
-        self.inner.description()
-    }
-
     fn binding_types(&self) -> HashSet<BindingType> {
         self.inner.binding_types()
     }

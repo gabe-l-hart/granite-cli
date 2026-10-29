@@ -25,14 +25,14 @@ use_channel!("CLAUD");
 /*-- public --*/
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, schemars::JsonSchema)]
-pub struct ClaudeLauncherConfig {
+pub(crate) struct ClaudeLauncherConfig {
     /// Override path to the `claude` binary for non-PATH installs.
     /// Leave unset to use PATH lookup.
     #[serde(default)]
-    pub command_path: Option<String>,
+    pub(crate) command_path: Option<String>,
 }
 
-pub struct ClaudeLauncher {
+pub(crate) struct ClaudeLauncher {
     instance_id: String,
     config: ClaudeLauncherConfig,
     bound_agent_model: Option<crate::capabilities::AgentModelBinding>,
@@ -74,10 +74,6 @@ impl crate::registry::Named for ClaudeLauncher {
 
 #[async_trait]
 impl Launcher for ClaudeLauncher {
-    fn name(&self) -> &str {
-        "Claude CLI"
-    }
-
     fn command(&self) -> &str {
         self.config.command_path.as_deref().unwrap_or("claude")
     }
@@ -987,12 +983,6 @@ mod tests {
     }
 
     impl crate::capabilities::CapabilityInfo for FakeSubAgentCapability {
-        fn name(&self) -> &str {
-            "Fake Sub-Agent"
-        }
-        fn description(&self) -> &str {
-            "test double"
-        }
         fn binding_types(&self) -> HashSet<BindingType> {
             HashSet::from([BindingType::SubAgent])
         }
