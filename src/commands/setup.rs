@@ -383,7 +383,7 @@ impl Discover {
         let mut recommendations: Vec<Recommendation> = Vec::new();
 
         for (capability_type, metadata) in CAPABILITY_REGISTRY.entries() {
-            if configured_ids.contains(&capability_type) {
+            if configured_ids.contains(&capability_type) || !metadata.auto_configurable {
                 continue;
             }
 

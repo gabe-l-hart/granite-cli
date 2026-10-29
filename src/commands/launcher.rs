@@ -428,6 +428,8 @@ async fn select_capabilities(
                 cap.binding_types()
                     .iter()
                     .any(|bt| launcher_def.supported_capabilities.contains(bt))
+                    && crate::launchers::mcp_transport_conflict(launcher_def, cap.as_ref())
+                        .is_none()
             })
             .map(|(id, _)| id)
             .collect();
@@ -445,8 +447,9 @@ async fn select_capabilities(
             .collect();
         if !carried.is_empty() && !announced {
             ctx.ui.warn(&format!(
-                "Left enabled but not listed below: {}. Each one is missing or \
-                 has a reference that does not resolve.",
+                "Left enabled but not listed below: {}. Each one is missing, has a \
+                 reference that does not resolve, or uses an MCP transport this \
+                 launcher cannot register.",
                 carried.join(", ")
             ));
             announced = true;
@@ -527,6 +530,21 @@ async fn select_capabilities(
         let nickname = ctx.ui.text("Name this capability instance", cap_type)?;
 
         crate::commands::CapabilityCommands::setup(ctx, cap_type, Some(&nickname), false).await?;
+
+        // The transport is only known once the capability is configured, so
+        // this is the first point the new instance can be checked.
+        if let Ok(configured) = ctx.sources().capabilities().get(&nickname)
+            && let Some(conflict) =
+                crate::launchers::mcp_transport_conflict(launcher_def, configured.as_ref())
+        {
+            ctx.ui.warn(&format!(
+                "'{nickname}' uses the {} MCP transport, which this launcher cannot \
+                 register (it supports: {}). It was configured but will not be enabled here.",
+                conflict.transport,
+                conflict.offered.join(", ")
+            ));
+            continue;
+        }
 
         // Pre-select the new capability on the next iteration.
         enabled.push(nickname.clone());
@@ -914,6 +932,7 @@ mod tests {
     fn no_capabilities_launcher_def() -> crate::launchers::LauncherMetadata {
         crate::launchers::LauncherMetadata {
             supported_capabilities: std::collections::HashSet::new(),
+            mcp_transports: std::collections::HashSet::new(),
             ..bob_launcher_def()
         }
     }

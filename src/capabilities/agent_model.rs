@@ -174,6 +174,7 @@ impl HasCapabilityMetadata for AgentModelCapability {
             }],
             tags: vec!["agent".to_string(), "model".to_string()],
             supported_binding_types: HashSet::from([BindingType::AgentModel]),
+            auto_configurable: true,
         }
     }
 }

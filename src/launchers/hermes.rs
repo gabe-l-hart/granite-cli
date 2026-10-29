@@ -28,7 +28,7 @@ use crate::capabilities::{
     ResolvedCapability, VoiceInputBinding, VoiceInputBindingRequest,
 };
 use crate::launchers::base::{EnvBinding, LaunchContext, Launcher, LauncherMetadata, run_command};
-use crate::launchers::shared::mcp_cli::mcp_binding_request;
+use crate::launchers::shared::mcp_cli::{STDIO_AND_HTTP, mcp_binding_request, transport_set};
 use crate::registry::{ConfigConstructable, ConstructError};
 use crate::utils::resolve_shell_command;
 use crate::utils::ui::Ui;
@@ -110,7 +110,9 @@ impl Launcher for HermesLauncher {
         }
 
         if capability_types.contains(&BindingType::Mcp) {
-            let binding = capability.bind(mcp_binding_request()).await?;
+            let binding = capability
+                .bind(mcp_binding_request(&Self::metadata().mcp_transports))
+                .await?;
             match binding {
                 Binding::Mcp(binding) => {
                     self.bound_mcp_bindings
@@ -246,6 +248,7 @@ impl HasHermesLauncherMetadata for HermesLauncher {
                 BindingType::Mcp,
                 BindingType::VoiceInput,
             ]),
+            mcp_transports: transport_set(STDIO_AND_HTTP),
             tags: vec!["hermes".to_string(), "agent".to_string()],
         }
     }

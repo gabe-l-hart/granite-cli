@@ -187,7 +187,12 @@ fn translate_paths_in_value(value: &serde_json::Value, to_wsl: bool) -> serde_js
 /// conversion restores Windows-native paths for disk persistence.
 #[cfg(not(windows))]
 fn translate_paths_in_config(config: &mut serde_json::Value, to_wsl: bool) {
-    config["command_path"] = translate_paths_in_value(&config["command_path"], to_wsl);
+    // Only keys already present are translated. Indexing `config["command_path"]`
+    // for assignment would insert a `null` entry into every config it touches,
+    // which a type with `deny_unknown_fields` then refuses on the next load.
+    if let Some(command_path) = config.get_mut("command_path") {
+        *command_path = translate_paths_in_value(command_path, to_wsl);
+    }
     if let Some(overrides) = config.get_mut("provider_overrides") {
         *overrides = translate_paths_in_value(overrides, to_wsl);
     }
@@ -861,6 +866,23 @@ impl Drop for TestConfigHome {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn path_translation_does_not_add_command_path_to_configs_without_one() {
+        // A capability with `deny_unknown_fields` rejects a stray
+        // `command_path: null` on the next load.
+        let mut config = serde_json::json!({"type": "http", "url": "http://x"});
+        translate_paths_in_config(&mut config, true);
+        translate_paths_in_config(&mut config, false);
+        assert!(config.get("command_path").is_none(), "{config}");
+    }
+
+    #[test]
+    fn path_translation_still_translates_an_existing_command_path() {
+        let mut config = serde_json::json!({"command_path": "claude"});
+        translate_paths_in_config(&mut config, true);
+        assert_eq!(config["command_path"], "claude");
+    }
     use super::*;
 
     #[test]

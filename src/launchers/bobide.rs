@@ -17,7 +17,7 @@ use crate::launchers::base::{
     EnvBinding, HasLauncherMetadata as HasBobIdeLauncherMetadata, LaunchContext, Launcher,
     LauncherMetadata, run_command,
 };
-use crate::launchers::shared::mcp_cli::mcp_binding_request;
+use crate::launchers::shared::mcp_cli::{STDIO_AND_HTTP, mcp_binding_request, transport_set};
 use crate::registry::{ConfigConstructable, ConstructError};
 use crate::utils::resolve_shell_command;
 use crate::utils::subserver::SubServer;
@@ -178,7 +178,9 @@ impl Launcher for BobIdeLauncher {
             return Ok(());
         }
 
-        let binding = capability.bind(mcp_binding_request()).await?;
+        let binding = capability
+            .bind(mcp_binding_request(&Self::metadata().mcp_transports))
+            .await?;
         match binding {
             Binding::Mcp(binding) => {
                 self.bound_mcp_bindings
@@ -367,6 +369,7 @@ impl HasBobIdeLauncherMetadata for BobIdeLauncher {
             description: "IBM Bob IDE (full desktop application)".to_string(),
             default_command: "bobide".to_string(),
             supported_capabilities: HashSet::from([BindingType::Mcp, BindingType::SubAgent]),
+            mcp_transports: transport_set(STDIO_AND_HTTP),
             tags: vec!["bob".to_string(), "ibm".to_string(), "ide".to_string()],
         }
     }

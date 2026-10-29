@@ -15,6 +15,7 @@ pub static CAPABILITY_REGISTRY: LazyLock<base::CapabilityFactory> = LazyLock::ne
     factory.register::<agent_model::AgentModelCapability>("agent-model");
     factory.register::<speech_to_text::SpeechToTextCapability>("speech-to-text");
     factory.register::<vision_mcp::VisionMCPCapability>("vision-mcp");
+    factory.register::<mcp_server::McpServerCapability>("mcp-server");
     factory.register::<sub_agent::SubAgentCapability>("sub-agent");
     factory.register::<sub_agent_code::CodeSubAgentCapability>("sub-agent-code");
     factory.register::<sub_agent_explore::ExploreSubAgentCapability>("sub-agent-explore");
@@ -155,6 +156,9 @@ pub use agent_model::{AgentModelCapability, AgentModelCapabilityConfig};
 
 mod speech_to_text;
 pub use speech_to_text::{SpeechToTextCapability, SpeechToTextCapabilityConfig};
+
+mod mcp_server;
+pub use mcp_server::{McpServerCapability, McpServerCapabilityConfig};
 
 mod vision_mcp;
 pub use vision_mcp::{VisionMCPCapability, VisionMCPCapabilityConfig};

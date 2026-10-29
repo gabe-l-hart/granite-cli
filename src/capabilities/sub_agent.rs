@@ -188,6 +188,7 @@ macro_rules! declare_sub_agent_basic {
                     }],
                     tags: vec![$($tag.to_string()),*],
                     supported_binding_types: std::collections::HashSet::from([$crate::capabilities::base::BindingType::SubAgent]),
+                    auto_configurable: true,
                 }
             }
         }
@@ -379,6 +380,7 @@ macro_rules! declare_sub_agent_full {
                     }],
                     tags: vec![$($tag.to_string()),*],
                     supported_binding_types: std::collections::HashSet::from([$crate::capabilities::base::BindingType::SubAgent]),
+                    auto_configurable: true,
                 }
             }
         }

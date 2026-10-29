@@ -180,6 +180,7 @@ impl HasCapabilityMetadata for SpeechToTextCapability {
                 "speech".to_string(),
             ],
             supported_binding_types: HashSet::from([BindingType::VoiceInput]),
+            auto_configurable: true,
         }
     }
 }
