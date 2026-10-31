@@ -2367,6 +2367,7 @@ impl SetupCommands {
             }
 
             let model_config = crate::config::ModelConfig {
+                discovered: None,
                 model_id: model_id.clone(),
                 model_type: model_id.clone(),
                 config: serde_json::json!({}),
@@ -2802,6 +2803,7 @@ mod tests {
         ctx.config_mut().models.insert(
             id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: id.to_string(),
                 model_type: id.to_string(),
                 config: serde_json::json!({}),
@@ -3788,6 +3790,7 @@ mod tests {
         ctx.config_mut().models.insert(
             model_id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: model_id.to_string(),
                 model_type: model_id.to_string(),
                 config: serde_json::json!({}),

@@ -876,6 +876,7 @@ mod tests {
         ctx.config_mut().models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 provider_id: "ollama".to_string(),
@@ -1363,6 +1364,7 @@ mod tests {
         ctx.config_mut().models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 provider_id: "gone-provider".to_string(),

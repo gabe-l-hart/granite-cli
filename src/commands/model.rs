@@ -1145,6 +1145,7 @@ mod tests {
         ctx.config_mut().models.insert(
             id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: id.to_string(),
                 model_type: id.to_string(),
                 provider_id: provider_id.unwrap_or("ollama").to_string(),
@@ -1166,6 +1167,7 @@ mod tests {
         config.models.insert(
             model_id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: model_id.to_string(),
                 model_type: model_id.to_string(),
                 provider_id: provider_id.to_string(),
@@ -2039,6 +2041,7 @@ mod tests {
         ctx.config_mut().models.insert(
             instance_id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: instance_id.to_string(),
                 model_type: "custom".to_string(),
                 provider_id: provider_id.unwrap_or("ollama").to_string(),
@@ -2148,6 +2151,7 @@ mod tests {
         config.models.insert(
             "my-custom".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "my-custom".to_string(),
                 model_type: "custom".to_string(),
                 provider_id: "openai".to_string(),

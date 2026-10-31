@@ -316,6 +316,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -326,6 +327,7 @@ mod tests {
         config.models.insert(
             "granite-guardian-3.1-8b".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-guardian-3.1-8b".to_string(),
                 model_type: "granite-guardian-3.1-8b".to_string(),
                 config: serde_json::json!({}),
@@ -362,6 +364,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -383,6 +386,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -412,6 +416,7 @@ mod tests {
         config.models.insert(
             "not-a-real-model".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "not-a-real-model".to_string(),
                 model_type: "not-a-real-model".to_string(),
                 config: serde_json::json!({}),
@@ -432,6 +437,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -458,6 +464,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -501,6 +508,7 @@ mod tests {
         config.models.insert(
             "mystery".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "mystery".to_string(),
                 model_type: "not-a-catalog-id".to_string(),
                 config: serde_json::json!({}),
@@ -527,6 +535,7 @@ mod tests {
             config.models.insert(
                 id.to_string(),
                 ModelConfig {
+                    discovered: None,
                     model_id: id.to_string(),
                     model_type: id.to_string(),
                     config: serde_json::json!({}),
@@ -559,6 +568,7 @@ mod tests {
             config.models.insert(
                 id.to_string(),
                 ModelConfig {
+                    discovered: None,
                     model_id: id.to_string(),
                     model_type: model_type.to_string(),
                     config: serde_json::json!({}),
@@ -607,6 +617,7 @@ mod tests {
         config.models.insert(
             "granite-3.1-8b-instruct".to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: "granite-3.1-8b-instruct".to_string(),
                 model_type: "granite-3.1-8b-instruct".to_string(),
                 config: serde_json::json!({}),
@@ -678,6 +689,7 @@ mod tests {
         config.models.insert(
             model_id.to_string(),
             ModelConfig {
+                discovered: None,
                 model_id: model_id.to_string(),
                 model_type: model_id.to_string(),
                 config: serde_json::json!({}),
