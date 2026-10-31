@@ -275,6 +275,7 @@ pub(crate) use base::{
 pub(crate) use base::{LayerKind, LayerTypeCount};
 
 mod custom;
+pub(crate) mod discovery;
 
 pub(crate) mod context_fit;
 pub(crate) use context_fit::{ContextFit, required_gb};
