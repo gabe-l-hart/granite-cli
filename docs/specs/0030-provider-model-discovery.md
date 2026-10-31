@@ -621,9 +621,13 @@ Turning `discover_models` off:
 - Managed models keep their `discovered` marker, so re-enabling resumes sync.
 - `model remove` is allowed while the flag is off (the escape hatch above).
 
-Deleting a provider already flows through `dependents` (models reference
+Deleting a provider flows through `dependents` (models reference
 `provider_id`), so its managed models are handled by the existing
-`--dependents` policy.
+`--dependents` policy. `--dependents discovered` removes only the dependents
+provider discovery created, leaving catalog and hand-made models (and any
+dependents of those) in place. It is also the explicit escape hatch for
+removing a discovered model directly while its provider still has discovery
+on.
 
 ## Edge cases
 

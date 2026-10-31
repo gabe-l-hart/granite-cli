@@ -969,9 +969,13 @@ impl ModelCommands {
 
         // A discovery-managed model belongs to its provider while that
         // provider's discovery is on: removing it here would only be undone
-        // by the next sync. Turning discovery off is the escape hatch. If the
-        // provider cannot be built, no sync can re-add the model, so allow
-        // the removal.
+        // by the next sync. Turning discovery off, or naming the discovered
+        // policy, is the explicit escape hatch. If the provider cannot be
+        // built, no sync can re-add the model, so allow the removal there too.
+        let remove_discovered = matches!(
+            policy,
+            Some(crate::commands::shared::remediation::DependentsPolicy::Discovered)
+        );
         let discovered = ctx
             .config()
             .get_model(model_id)
@@ -983,7 +987,7 @@ impl ModelCommands {
                 .upstream(&discovered.provider_id)
                 .map(|provider| provider.discover_models())
                 .unwrap_or(false);
-            if discovery_on {
+            if discovery_on && !remove_discovered {
                 anyhow::bail!(
                     "Model '{model_id}' is managed by provider '{}', which has model discovery on. \
                      Remove it at the provider instead: turn discovery off (provider setup {}), or \
