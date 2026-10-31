@@ -96,6 +96,15 @@ impl ModelSource {
         self.configs.get(model_id).and_then(|mc| mc.variant.clone())
     }
 
+    /// The provider's own name for `model_id`, when discovery created the
+    /// entry under a different configured instance id.
+    pub(crate) fn provider_model_id(&self, model_id: &str) -> Option<String> {
+        self.configs
+            .get(model_id)
+            .and_then(|mc| mc.discovered.as_ref())
+            .map(|discovered| discovered.provider_model_id.clone())
+    }
+
     /// The model configured under `model_id` (the instance id -- matches
     /// `ModelConfig.model_id`, which config loading enforces equals the outer
     /// `config.models` key), built on the first ask and returned from the
@@ -162,6 +171,7 @@ impl base::ModelLookup for ModelSource {
             model,
             self.provider_for(model_id)?,
             self.configured_variant(model_id),
+            self.provider_model_id(model_id),
         ))
     }
 }

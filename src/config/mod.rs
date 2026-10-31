@@ -76,10 +76,25 @@ pub(crate) struct ModelConfig {
     pub(crate) model_type: String,
     pub(crate) provider_id: String,
     pub(crate) variant: Option<String>,
+    /// Present only on entries provider discovery created. `None` for catalog
+    /// models and hand-made custom models.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) discovered: Option<DiscoveredModel>,
     /// Model-type-specific config (e.g. `CustomModelConfig`'s fields for a
     /// `"custom"` instance). `{}` for catalog models, which take no config
     /// beyond `provider_config`.
     pub(crate) config: serde_json::Value,
+}
+
+/// Provenance for a model entry provider discovery created. Its presence is
+/// what lets sync know it may remove the entry; catalog and hand-made custom
+/// models do not carry it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct DiscoveredModel {
+    /// Provider instance that created this entry.
+    pub(crate) provider_id: String,
+    /// Name requests must use upstream.
+    pub(crate) provider_model_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
