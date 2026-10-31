@@ -337,7 +337,8 @@ enum ProviderSubcommands {
         provider_id: String,
     },
 
-    /// Interactive provider setup wizard
+    /// Interactive provider setup wizard, including whether to mirror the
+    /// models the provider reports (for provider types that support it)
     Setup {
         /// Catalog provider type to set up (e.g. `openai-compatible`)
         provider_type: String,
@@ -349,10 +350,16 @@ enum ProviderSubcommands {
         instance_id: Option<String>,
     },
 
-    /// Check provider health
+    /// Check provider health, then reconcile the models each healthy provider
+    /// reports when its model discovery is on
     Health {
         /// Provider ID (optional, checks all if not specified)
         provider_id: Option<String>,
+
+        /// Do not reconcile the models each healthy provider reports.
+        /// Discovery is on by default for providers configured for it.
+        #[arg(long)]
+        no_sync: bool,
     },
 
     /// Remove a configured provider instance
@@ -835,9 +842,10 @@ async fn run_provider_command(
             provider_type,
             instance_id,
         } => ProviderCommands::setup(ctx, &provider_type, instance_id.as_deref(), false).await,
-        ProviderSubcommands::Health { provider_id } => {
-            ProviderCommands::health(ctx, provider_id.as_deref()).await
-        }
+        ProviderSubcommands::Health {
+            provider_id,
+            no_sync,
+        } => ProviderCommands::health(ctx, provider_id.as_deref(), !no_sync).await,
         ProviderSubcommands::Remove {
             provider_id,
             dependents,
