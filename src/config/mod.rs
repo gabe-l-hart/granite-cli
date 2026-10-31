@@ -645,6 +645,37 @@ impl Config {
 
     pub(crate) fn remove_model(&mut self, id: &str) -> Result<()> {
         self.models.remove(id);
+        Self::remove_model_file(id);
+        self.save()
+    }
+
+    /// Applies one provider's discovery result: removes model entries the
+    /// provider no longer reports, adds the ones it does, and saves once.
+    ///
+    /// Saving per model would rewrite the whole configuration for each one,
+    /// and `save()` alone would leave the YAML files of removed entries
+    /// behind, so removals delete their files here.
+    pub(crate) fn apply_model_changes(
+        &mut self,
+        additions: Vec<(String, ModelConfig)>,
+        removals: &[String],
+    ) -> Result<()> {
+        if additions.is_empty() && removals.is_empty() {
+            return Ok(());
+        }
+        for id in removals {
+            self.models.remove(id);
+            Self::remove_model_file(id);
+        }
+        for (id, config) in additions {
+            self.models.insert(id, config);
+        }
+        self.save()
+    }
+
+    /// Deletes the YAML file backing a model entry, best effort; an absent
+    /// file is not an error.
+    fn remove_model_file(id: &str) {
         let path = Self::models_dir().ok().and_then(|d| {
             let p = d.join(format!("{}.yaml", Self::id_to_filename(id)));
             if p.exists() { Some(p) } else { None }
@@ -652,7 +683,6 @@ impl Config {
         if let Some(p) = path {
             let _ = fs::remove_file(&p);
         }
-        self.save()
     }
 
     pub(crate) fn update_model(
