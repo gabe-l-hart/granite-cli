@@ -637,7 +637,8 @@ on.
 - **Two providers report the same wire id.** Deterministic namespacing by
   sorted provider id.
 - **Wire id contains `/` or `:`** (llama.cpp `org/model:Q4_K_M`, Ollama tags).
-  Both are legal in instance ids and file names (`Config::id_to_filename`).
+  Both are legal in instance ids; `Config::id_to_filename` maps the separator
+  and escapes Windows-invalid characters so config file names remain usable.
 - **Provider reports the same id twice.** First wins; warn.
 - **Ollama `/api/show` fails for one model.** Keep the `/api/tags` entry; the
   next sync retries.
