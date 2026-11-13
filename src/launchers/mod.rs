@@ -15,6 +15,7 @@ pub(crate) static LAUNCHER_REGISTRY: LazyLock<base::LauncherFactory> = LazyLock:
     factory.register::<bob::BobLauncher>("bob");
     factory.register::<bobide::BobIdeLauncher>("bobide");
     factory.register::<pi::PiLauncher>("pi");
+    factory.register::<cuga::CugaLauncher>("cuga");
     factory.register::<opencode::OpenCodeLauncher>("opencode");
     factory.register::<hermes::HermesLauncher>("hermes");
     factory.register::<goose::GooseLauncher>("goose");
@@ -119,6 +120,7 @@ pub(crate) mod hermes;
 mod openclaw;
 pub(crate) mod opencode;
 pub(crate) mod pi;
+pub(crate) mod cuga;
 
 pub(crate) use base::{LaunchContext, Launcher, LauncherMetadata};
 pub(crate) use base::{McpTransportConflict, mcp_transport_conflict, resolve_and_bind};
@@ -149,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn registry_contains_claude_bob_pi_and_opencode() {
+    fn registry_contains_claude_bob_pi_opencode_and_cuga() {
         assert!(LAUNCHER_REGISTRY.get("claude").is_some());
         assert!(LAUNCHER_REGISTRY.get("bob").is_some());
         assert!(LAUNCHER_REGISTRY.get("pi").is_some());
@@ -159,6 +161,7 @@ mod tests {
         assert!(LAUNCHER_REGISTRY.get("goose").is_some());
         assert!(LAUNCHER_REGISTRY.get("openclaw").is_some());
         assert!(LAUNCHER_REGISTRY.get("codex").is_some());
+        assert!(LAUNCHER_REGISTRY.get("cuga").is_some());
         assert!(LAUNCHER_REGISTRY.get("nonexistent").is_none());
     }
 
@@ -208,6 +211,7 @@ mod tests {
         assert!(catalog.contains_key("goose"));
         assert!(catalog.contains_key("openclaw"));
         assert!(catalog.contains_key("codex"));
+        assert!(catalog.contains_key("cuga"));
     }
 
     #[test]
@@ -223,6 +227,7 @@ mod tests {
         assert!(source.config_schema("goose").is_some());
         assert!(source.config_schema("openclaw").is_some());
         assert!(source.config_schema("codex").is_some());
+        assert!(source.config_schema("cuga").is_some());
         assert!(source.config_schema("nonexistent").is_none());
     }
 }
